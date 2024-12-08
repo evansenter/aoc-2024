@@ -17,7 +17,7 @@ fn solve_part1(data: &[Vec<i32>]) -> i32 {
 
 fn solve_part2(data: &[Vec<i32>]) -> i32 {
     let data = vec_tools::transpose(&data.to_vec());
-    let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!(0);
+    let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!{};
 
     for id in data[1].clone().into_iter() {
         counts[id] += 1;
