@@ -7,5 +7,5 @@ fn main() {
     solutions::day01::solve();
     
     // Or run all solutions
-    solutions::run_all();
+    // solutions::run_all();
 }
