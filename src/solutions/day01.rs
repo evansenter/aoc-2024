@@ -1,24 +1,29 @@
 use crate::utils::{input, vec_tools};
+use defaultmap::*;
 
 pub fn solve() {
     let input = input::read_file("inputs/day01.txt");
-    let mut data: Vec<Vec<i32>> = parse_data(&input);
-    data = sort_transposed(data);
-
-    let deltas = data.iter().map(|vec: &Vec<i32>| (vec[1] - vec[0]).abs());
-
-    println!("{:#?}", deltas.sum::<i32>());
+    let data: Vec<Vec<i32>> = input::parse_int_grid(&input);
+    println!("Part 1: {:#?}", solve_part1(&data));
+    println!("Part 2: {:#?}", solve_part2(&data));
 }
 
-fn parse_data(input: &str) -> Vec<Vec<i32>> {
-    input
-        .lines()
-        .map(|line: &str| {
-            line.split_whitespace()
-                .map(|s: &str| s.parse::<i32>().unwrap())
-                .collect::<Vec<i32>>()
-        })
-        .collect()
+fn solve_part1(data: &[Vec<i32>]) -> i32 {
+    let data = sort_transposed(data.to_vec());
+    data.iter()
+        .map(|vec: &Vec<i32>| (vec[1] - vec[0]).abs())
+        .sum()
+}
+
+fn solve_part2(data: &[Vec<i32>]) -> i32 {
+    let data = vec_tools::transpose(&data.to_vec());
+    let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!(0);
+
+    for id in data[1].clone().into_iter() {
+        counts[id] += 1;
+    }
+
+    data[0].iter().fold(0, |acc, &x| acc + x * counts[x])
 }
 
 fn sort_transposed(mut data: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
@@ -34,35 +39,6 @@ fn sort_transposed(mut data: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn get_test_input() -> String {
-        input::read_file("inputs/day01_test.txt")
-    }
-
-    #[test]
-    fn test_parse_data() {
-        let input = "1 2 3\n4 5 6\n7 8 9";
-        let expected = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
-        assert_eq!(parse_data(input), expected);
-    }
-
-    #[test]
-    fn test_parse_data_single_line() {
-        let input = "10 20 30";
-        let expected = vec![vec![10, 20, 30]];
-        assert_eq!(parse_data(input), expected);
-    }
-
-    #[test]
-    fn test_parse_data_with_actual_input() {
-        let input = get_test_input();
-        let result = parse_data(&input);
-
-        // Basic structure tests
-        assert!(!result.is_empty());
-        assert!(result.iter().all(|row| !row.is_empty()));
-        assert!(result.iter().all(|row| row.iter().all(|&x| x >= 0)));
-    }
 
     #[test]
     fn test_sort_transposed_single_row() {
