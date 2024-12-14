@@ -1,81 +1,105 @@
 use crate::utils::input;
-use itertools::{chain, iproduct};
-use std::ops::Add;
-use std::ops::Mul;
+use itertools::iproduct;
+use std::ops::{Add, Mul};
 
-const XMAS_TARGET: &str = "XMAS";
+const XMAS: &str = "XMAS";
+const MAS: &str = "MAS";
 
 pub fn solve() {
-    let data = input::read_file("inputs/day04.txt");
-    println!("{}", data);
-    println!("Part 1: {}", solve_part1(&data));
-    println!("Part 2: {}", solve_part2(&data));
+    let input = input::read_file("inputs/day04.txt");
+    println!("Part 1: {}", solve_part1(&input));
+    println!("Part 2: {}", solve_part2(&input));
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct ICoords(isize, isize);
+struct Coord(isize, isize);
 
-impl Add for ICoords {
-    type Output = ICoords;
-
-    fn add(self, other: ICoords) -> ICoords {
-        ICoords(self.0 + other.0, self.1 + other.1)
+impl Add for Coord {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Self(self.0 + other.0, self.1 + other.1)
     }
 }
 
-impl Mul<isize> for ICoords {
-    type Output = ICoords;
-
-    fn mul(self, other: isize) -> ICoords {
-        ICoords(self.0 * other, self.1 * other)
+impl Mul<isize> for Coord {
+    type Output = Self;
+    fn mul(self, scalar: isize) -> Self {
+        Self(self.0 * scalar, self.1 * scalar)
     }
 }
 
-impl ICoords {
-    fn is_in_bounds(&self, grid_size: ICoords) -> bool {
-        (0..grid_size.0).contains(&self.0) && (0..grid_size.1).contains(&self.1)
+impl Coord {
+    fn in_bounds(&self, size: Self) -> bool {
+        (0..size.0).contains(&self.0) && (0..size.1).contains(&self.1)
     }
 }
 
-fn solve_part1(data: &str) -> usize {
-    let lines: &Vec<Vec<char>> = &data
-        .lines()
-        .map(|line: &str| line.chars().collect())
-        .collect();
-    let grid_size: ICoords = ICoords(lines.len() as isize, lines[0].len() as isize);
+struct Grid {
+    cells: Vec<Vec<char>>,
+    size: Coord,
+}
 
-    iproduct!(0..grid_size.0, 0..grid_size.1, -1..=1, -1..=1)
-        .filter_map(|(row, col, row_dir, col_dir)| {
-            if lines[row as usize][col as usize] != XMAS_TARGET.chars().nth(0).unwrap() {
-                None
-            } else {
-                Some(
-                    chain(
-                        std::iter::once(ICoords(0, 0)),
-                        (1..XMAS_TARGET.len()).map(|i| ICoords(row_dir, col_dir) * (i as isize)),
-                    )
-                    .map(|offset: ICoords| ICoords(row, col) + offset)
-                    .collect(),
-                )
-            }
+impl Grid {
+    fn from_str(input: &str) -> Self {
+        let cells: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
+        let size = Coord(cells.len() as isize, cells[0].len() as isize);
+        Self { cells, size }
+    }
+
+    fn get(&self, coord: Coord) -> Option<char> {
+        if coord.in_bounds(self.size) {
+            Some(self.cells[coord.0 as usize][coord.1 as usize])
+        } else {
+            None
+        }
+    }
+}
+
+fn solve_part1(input: &str) -> usize {
+    let grid = Grid::from_str(input);
+    let directions = iproduct!(-1..=1, -1..=1)
+        .filter(|&(dr, dc)| dr != 0 || dc != 0)
+        .map(|(dr, dc)| Coord(dr, dc));
+    let grid_ref = &grid;
+
+    iproduct!(0..grid.size.0, 0..grid.size.1)
+        .map(|(row, col)| Coord(row, col))
+        .filter(|&start| grid_ref.get(start) == Some(XMAS.chars().next().unwrap()))
+        .flat_map(|start| {
+            directions.clone().filter_map(move |dir| {
+                let trace: Vec<_> = (0..XMAS.len())
+                    .map(|i| start + dir * (i as isize))
+                    .collect();
+
+                let valid = trace.last().unwrap().in_bounds(grid_ref.size)
+                    && trace
+                        .iter()
+                        .map(|&pos| grid_ref.get(pos))
+                        .collect::<Option<String>>()
+                        == Some(XMAS.to_string());
+
+                valid.then_some(trace)
+            })
         })
-        .filter(|trace: &Vec<ICoords>| {
-            trace
-                .last()
-                .expect("trace should never be empty")
-                .is_in_bounds(grid_size)
-                && trace.first() != trace.last()
-        })
-        .map(|trace: Vec<ICoords>| {
-            trace
-                .into_iter()
-                .map(|ICoords(row, col)| lines[row as usize][col as usize])
-                .collect::<String>()
-        })
-        .filter(|s: &String| s == XMAS_TARGET)
         .count()
 }
 
-fn solve_part2(data: &str) -> i32 {
-    0
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_coord_operations() {
+        assert_eq!(Coord(1, 2) + Coord(3, 4), Coord(4, 6));
+        assert_eq!(Coord(2, 3) * 2, Coord(4, 6));
+    }
+
+    #[test]
+    fn test_coord_bounds() {
+        let size = Coord(5, 5);
+        assert!(Coord(0, 0).in_bounds(size));
+        assert!(Coord(4, 4).in_bounds(size));
+        assert!(!Coord(5, 5).in_bounds(size));
+        assert!(!Coord(-1, 0).in_bounds(size));
+    }
 }
