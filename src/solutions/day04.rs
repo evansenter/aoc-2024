@@ -1,5 +1,5 @@
 use crate::utils::input;
-use itertools::iproduct;
+use itertools::{Itertools,iproduct};
 use std::ops::{Add, Mul};
 
 const XMAS: &str = "XMAS";
@@ -11,7 +11,7 @@ pub fn solve() {
     println!("Part 2: {}", solve_part2(&input));
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct Coord(isize, isize);
 
 impl Add for Coord {
@@ -82,6 +82,37 @@ fn solve_part1(input: &str) -> usize {
             })
         })
         .count()
+}
+
+fn solve_part2(input: &str) -> usize {
+    let grid = Grid::from_str(input);
+    let directions = iproduct!([-1, 1], [-1, 1])
+        .map(|(dr, dc)| Coord(dr, dc));
+    let grid_ref = &grid;
+
+    let traces: Vec<Coord> = iproduct!(0..grid.size.0, 0..grid.size.1)
+        .map(|(row, col)| Coord(row, col))
+        .filter(|&start| grid_ref.get(start) == Some(MAS.chars().next().unwrap()))
+        .flat_map(|start| {
+            directions.clone().filter_map(move |dir| {
+                let trace: Vec<_> = (0..MAS.len())
+                    .map(|i| start + dir * (i as isize))
+                    .collect();
+
+                let valid = trace.last().unwrap().in_bounds(grid_ref.size)
+                    && trace
+                        .iter()
+                        .map(|&pos| grid_ref.get(pos))
+                        .collect::<Option<String>>()
+                        == Some(MAS.to_string());
+
+                valid.then(|| trace.get(1).copied())
+            })
+        })
+        .flatten()
+        .collect();
+
+    traces.iter().counts().values().filter(|&&count| count > 1).count()
 }
 
 #[cfg(test)]
