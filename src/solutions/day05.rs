@@ -26,7 +26,7 @@ pub fn solve() {
     println!("Part 2: {}", solve_part2(&input));
 }
 
-fn solve_part1(transitions: &Vec<Vec<i32>>, page_lists: &Vec<Vec<i32>>) -> i32 {
+fn solve_part1(transitions: &Vec<Vec<i32>>, page_lists: &[Vec<i32>]) -> i32 {
     let mut bad_transitions: HashMap<i32, HashSet<i32>> = HashMap::new();
 
     for transition in transitions {
