@@ -13,4 +13,7 @@ fn main() {
 
     println!("Day 4 Solution:");
     solutions::day04::solve();
+
+    println!("Day 5 Solution:");
+    solutions::day05::solve();
 }
