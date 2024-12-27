@@ -2,6 +2,8 @@ mod solutions;
 mod utils;
 
 fn main() {
+    env_logger::init();
+
     println!("Day 1 Solution:");
     solutions::day01::solve();
 
